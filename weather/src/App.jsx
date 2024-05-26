@@ -1,12 +1,13 @@
 import React from 'react';
 import Weather from './weather';
 import './App.css';
+import { Container } from '@mui/material';
 
 function App() {
   return (
-    <div className="App">
+    <Container>
       <Weather />
-    </div>
+    </Container>
   );
 }
 

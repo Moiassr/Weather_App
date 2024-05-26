@@ -1,40 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
-const nytApiKey = 'ffae6b24459a9752e3d4a94e200fa8dd';
-
-function getTopNews() {
-    fetch(`https://api.nytimes.com/svc/topstories/v2/home.json?api-key=${nytApiKey}`)
-        .then(response => response.json())
-        .then(data => displayNews(data.results))
-        .catch(error => console.error('Error fetching news data:', error));
-}
-
-function displayNews(articles) {
-    const newsContainer = document.createElement('div');
-    newsContainer.className = 'news-container';
-    articles.slice(0, 5).forEach(article => {
-        const articleElement = document.createElement('div');
-        articleElement.className = 'article';
-        articleElement.innerHTML = `
-            <h3>${article.title}</h3>
-            <p>${article.byline}</p>
-            <p>${article.abstract}</p>
-            <a href="${article.url}" target="_blank">Read more</a>
-        `;
-        newsContainer.appendChild(articleElement);
-    });
-    document.body.appendChild(newsContainer);
-}
-
-getTopNews();
+import { TextField, Button, Typography, Card, CardContent, CardMedia } from '@mui/material';
 
 const Weather = () => {
   const [location, setLocation] = useState('');
   const [weatherData, setWeatherData] = useState(null);
+  const [newsData, setNewsData] = useState([]);
 
   const fetchWeatherData = async () => {
-    const apiKey = import.meta.env.VITE_API_KEY;
+    const apiKey = import.meta.env.VITE_OPENWEATHERMAP_API_KEY;
     const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
 
     try {
@@ -45,32 +19,66 @@ const Weather = () => {
     }
   };
 
+  const fetchNewsData = async () => {
+    const apiKey = import.meta.env.VITE_NYT_API_KEY;
+    const url = `https://api.nytimes.com/svc/topstories/v2/home.json?api-key=${apiKey}`;
+
+    try {
+      const response = await axios.get(url);
+      setNewsData(response.data.results.slice(0, 5));
+    } catch (error) {
+      console.error('Error fetching news data:', error);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     fetchWeatherData();
+    fetchNewsData();
   };
 
   return (
     <div className="weather-container">
-      <h1>Weather App</h1>
+      <Typography variant="h4" gutterBottom>Weather App</Typography>
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
+        <TextField
+          label="Enter a city"
+          variant="outlined"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter a city"
+          fullWidth
+          margin="normal"
         />
-        <button type="submit">Search</button>
+        <Button type="submit" variant="contained" color="primary">Search</Button>
       </form>
       {weatherData && (
-        <div className="weather-info">
-          <h2>{weatherData.name}, {weatherData.sys.country}</h2>
-          <p>Temperature: {weatherData.main.temp}°C</p>
-          <p>Weather: {weatherData.weather[0].description}</p>
-          <img
-            src={`http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png`}
-            alt="Weather icon"
-          />
+        <Card sx={{ marginTop: 2 }}>
+          <CardContent>
+            <Typography variant="h5">{weatherData.name}, {weatherData.sys.country}</Typography>
+            <Typography variant="body1">Temperature: {weatherData.main.temp}°C</Typography>
+            <Typography variant="body1">Weather: {weatherData.weather[0].description}</Typography>
+            <CardMedia
+              component="img"
+              image={`http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png`}
+              alt="Weather icon"
+              sx={{ width: 50, height: 50 }}
+            />
+          </CardContent>
+        </Card>
+      )}
+      {newsData.length > 0 && (
+        <div className="news-container" style={{ marginTop: '20px' }}>
+          <Typography variant="h5" gutterBottom>Top News</Typography>
+          {newsData.map((article, index) => (
+            <Card key={index} sx={{ marginBottom: 2 }}>
+              <CardContent>
+                <Typography variant="h6">{article.title}</Typography>
+                <Typography variant="body2">{article.byline}</Typography>
+                <Typography variant="body2">{article.abstract}</Typography>
+                <Button href={article.url} target="_blank" variant="outlined" color="primary">Read more</Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
